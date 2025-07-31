@@ -47,36 +47,46 @@ resource "aws_iam_instance_profile" "ssm_profile" {
   role = aws_iam_role.k8s_ssm_role.name
 }
 
-resource "aws_s3_bucket" "discovery_bucket" {
-  bucket = "${var.prefix}-aws-irsa-oidc-discovery"
+data "aws_iam_policy_document" "jwks_lambda_policy" {
+  statement {
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["lambda.amazonaws.com"]
+    }
+
+    actions = ["sts:AssumeRole"]
+  }
 }
 
-resource "aws_s3_bucket_public_access_block" "discovery_bucket" {
-  bucket = aws_s3_bucket.discovery_bucket.id
-
-  block_public_acls       = false
-  ignore_public_acls      = false
-  block_public_policy     = false
-  restrict_public_buckets = false
+resource "aws_iam_role" "jwks_lambda_role" {
+  count = local.is_production ? 1 : 0
+  name  = "${var.prefix}-jwks-lambda-role"
+  assume_role_policy = data.aws_iam_policy_document.jwks_lambda_role.json
 }
 
-resource "aws_s3_bucket_policy" "readonly_policy" {
-  bucket = aws_s3_bucket.discovery_bucket.id
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid       = "AllowPublicRead"
-        Effect    = "Allow"
-        Principal = "*"
-        Action    = "s3:GetObject"
-        Resource = [
-          aws_s3_bucket.discovery_bucket.arn,
-          "${aws_s3_bucket.discovery_bucket.arn}/*",
-        ]
-      },
+data "aws_iam_policy_document" "lambda_s3" {
+  statement {
+    actions = [
+      "s3:PutObject",
+      "s3:PutObjectAcl",
+      "s3:GetObject",
     ]
-  })
+    effect = "Allow"
 
-  depends_on = [aws_s3_bucket_public_access_block.discovery_bucket]
+    resources = ["arn:aws:s3:::${var.s3_discovery_bucket_name}/*"]
+  }
+}
+
+resource "aws_iam_policy" "lambda_s3_policy" {
+  name        = "LAMBDAS3POLICY"
+  description = "Provides permissions necessary for the lambda function to place objects in the s3 bucket"
+
+  policy = data.aws_iam_policy_document.lambda_s3.json
+}
+
+resource "aws_iam_role_policy_attachment" "enable_s3" {
+  role       = aws_iam_role.jwks_lambda_role.name
+  policy_arn = aws_iam_policy.lambda_s3_policy.arn
 }

@@ -27,3 +27,8 @@ output "irsa_public_key_arn" {
   description = "ARN for the irsa public key"
   value = aws_ssm_parameter.public_key.arn
 }
+
+output "s3_discovery_bucket_name" {
+  description = "S3 bucket name where the IRSA signing keys are stored"
+  value = aws_s3_bucket.discovery_bucket.id
+}
