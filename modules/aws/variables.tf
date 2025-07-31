@@ -1,5 +1,5 @@
-variable "s3_bucket_suffix" {
-  description = "Suffix for s3 bucket for oidc"
+variable "prefix" {
+  description = "Prefix used for resource naming and tagging"
   type = string
   default = "self-managed"
 }

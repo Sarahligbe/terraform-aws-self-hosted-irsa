@@ -3,6 +3,7 @@ data "aws_iam_policy_document" "ssm" {
     actions = [
       "ssm:PutParameter",
       "ssm:GetParameter",
+      "ssm:DeleteParameter",
     ]
     effect = "Allow"
 
@@ -12,7 +13,7 @@ data "aws_iam_policy_document" "ssm" {
 
 resource "aws_iam_policy" "k8s_ssm_policy" {
   name        = "control_plane_ssm"
-  description = "Provides permission to put and get parameters in the ssm parameter store and s3 bucket"
+  description = "Provides permission to put and get parameters in the ssm parameter store"
 
   policy = data.aws_iam_policy_document.ssm.json
 }
@@ -47,7 +48,7 @@ resource "aws_iam_instance_profile" "ssm_profile" {
 }
 
 resource "aws_s3_bucket" "discovery_bucket" {
-  bucket = "aws-irsa-oidc-discovery-${var.s3_bucket_suffix}"
+  bucket = "${var.prefix}-aws-irsa-oidc-discovery"
 }
 
 resource "aws_s3_bucket_public_access_block" "discovery_bucket" {
