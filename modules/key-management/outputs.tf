@@ -28,7 +28,17 @@ output "irsa_public_key_arn" {
   value = aws_ssm_parameter.public_key.arn
 }
 
-output "s3_discovery_bucket_name" {
+output "private_key_pem" {
+  description = "IRSA private key"
+  value = tls_private_key.irsa_signing_key.private_key_pem
+}
+
+output "public_key_pem" {
+  description = "IRSA public key in PEM format"
+  value = tls_private_key.irsa_signing_key.public_key_pem
+}
+
+output "discovery_bucket_name" {
   description = "S3 bucket name where the IRSA signing keys are stored"
   value = aws_s3_bucket.discovery_bucket.id
 }

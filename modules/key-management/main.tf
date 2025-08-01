@@ -9,7 +9,7 @@ locals {
   
   ssm_private_key_path = "${var.ssm_parameter_prefix}/private-key"
   ssm_public_key_path  = "${var.ssm_parameter_prefix}/public-key"
-  s3_jwks_key        = "keys.json"
+  s3_jwks_key          = "keys.json"
 }
 
 resource "aws_s3_bucket" "discovery_bucket" {
@@ -28,14 +28,14 @@ resource "aws_s3_bucket_public_access_block" "discovery_bucket" {
 resource "aws_s3_bucket_policy" "readonly_policy" {
   bucket = aws_s3_bucket.discovery_bucket.id
   policy = jsonencode({
-    Version = "2012-10-17"
+    Version   = "2012-10-17"
     Statement = [
       {
         Sid       = "AllowPublicRead"
         Effect    = "Allow"
         Principal = "*"
         Action    = "s3:GetObject"
-        Resource = [
+        Resource  = [
           aws_s3_bucket.discovery_bucket.arn,
           "${aws_s3_bucket.discovery_bucket.arn}/*",
         ]
@@ -80,10 +80,10 @@ resource "aws_lambda_invocation" "generate_jwks" {
 }
 
 resource "aws_s3_object" "discovery_json" {
-  bucket = var.s3_discovery_bucket_name
+  bucket = aws_s3_bucket.discovery_bucket.id
   key    = ".well-known/openid-configuration"
   content = templatefile("${path.module}/discovery.json", {
-    issuer_hostpath = "s3-${var.region}.amazonaws.com/${var.s3_discovery_bucket_name}"
+    issuer_hostpath = "s3-${var.region}.amazonaws.com/${aws_s3_bucket.discovery_bucket.id}"
   })
   content_type = "application/json"
 }

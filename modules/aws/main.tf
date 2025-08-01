@@ -75,7 +75,7 @@ data "aws_iam_policy_document" "lambda_s3" {
     ]
     effect = "Allow"
 
-    resources = ["arn:aws:s3:::${var.s3_discovery_bucket_name}/*"]
+    resources = ["arn:aws:s3:::${var.discovery_bucket_name}/*"]
   }
 }
 

@@ -4,7 +4,7 @@ variable "prefix" {
   default = "self-managed"
 }
 
-variable "s3_discovery_bucket_name" {
+variable "discovery_bucket_name" {
   description = "S3 discovery bucket name"
   type = string
 }
