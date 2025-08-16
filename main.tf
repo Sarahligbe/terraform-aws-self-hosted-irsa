@@ -44,6 +44,7 @@ module "key_management" {
   prefix          = var.cluster_name
   execution_mode  = var.execution_mode
   region          = var.region
+  namespace       = var.pod_identity_namespace
 }
 
 module "aws" {
@@ -52,18 +53,19 @@ module "aws" {
   prefix                = var.cluster_name
   region                = var.region
   discovery_bucket_name = module.key_management.discovery_bucket_name
+  jwks_lambda_role_arn  = module.aws.jwks_lambda_role_arn
   
   tags                  = local.common_tags
 }
 
 module "kubernetes" {
-  source    = "./modules/kubernetes"
+  source            = "./modules/kubernetes"
 
-  region    = var.region
-  cluster_name = var.cluster_name
-  namespace   = var.pod_identity_namespace
-  distribution  = var.kubernetes_distribution
-  issuer_url    = module.key_management.service_account_issuer
+  region            = var.region
+  cluster_name      = var.cluster_name
+  namespace         = var.pod_identity_namespace
+  distribution      = var.kubernetes_distribution
+  issuer_url        = module.key_management.service_account_issuer
   private_key_pem   = module.key_management.private_key_pem
   public_key_pem    = module.key_management.public_key_pem
   key_host_path     = var.irsa_keys_local_path

@@ -17,15 +17,12 @@ data "kubectl_file_documents" "pod_identity" {
     content = templatefile("aws-pod-identity-webhook.yaml",
     namespace       = "${var.namespace}",
     webhook_cert    = "${webhook_cert}",
-    private_key_pem = "${private_key_pem}"
+    private_key_pem = "${webhook_key}"
     )
 }
 
 resource "kubectl_manifest" "pod_identity" {
     for_each  = data.kubectl_file_documents.docs.manifests
-    sensitive_fields = [
-        "metadata.annotations.my-secret-annotation"
-    ]
     yaml_body = each.value
 }
 

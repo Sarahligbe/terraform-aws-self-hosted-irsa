@@ -9,12 +9,6 @@ variable "execution_mode" {
   }
 }
 
-variable "ssm_parameter_prefix" {
-  description = "SSM parameter prefix for storing IRSA keys"
-  type        = string
-  default     = "/k8s/irsa"
-}
-
 variable "region" {
   description = "AWS region"
   type        = string
@@ -24,4 +18,15 @@ variable "prefix" {
   description = "Prefix used for resource naming and tagging"
   type = string
   default = "self-managed"
+}
+
+variable "namespace" {
+  description = "Namespace where aws pod identity webhook is installed"
+  type        = string
+  default     = "default"
+}
+
+variable "jwks_lambda_role_arn" {
+  description = "ARN for Lambda role to generate jwks" # get a better description
+  type        = string
 }

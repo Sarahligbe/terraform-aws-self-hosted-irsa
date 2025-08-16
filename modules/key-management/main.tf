@@ -6,9 +6,6 @@ ephemeral resource "tls_private_key" "irsa_signing_key" {
 locals {
   is_development = var.execution_mode == "development"
   is_production  = var.execution_mode == "production"
-  
-  ssm_private_key_path = "${var.ssm_parameter_prefix}/private-key"
-  ssm_public_key_path  = "${var.ssm_parameter_prefix}/public-key"
   s3_jwks_key          = "keys.json"
 }
 
@@ -56,7 +53,7 @@ data "archive_file" "jwks_file" {
 resource "aws_lambda_function" "jwks_generator" {
   filename         = data.archive_file.jwks_file.output_path
   function_name    = "${var.prefix}-jwks-generator"
-  role             = aws_iam_role.jwks_lambda_role.arn
+  role             = var.jwks_lambda_role_arn
   handler          = "index.handler"
   source_code_hash = data.archive_file.jwks_file.output_base64sha256
 
@@ -98,19 +95,23 @@ resource "aws_iam_openid_connect_provider" "main" {
   thumbprint_list = [data.tls_certificate.s3.certificates[0].sha1_fingerprint]
 }
 
+ephemeral resource "tls_private_key" "webhook_key" {
+  algorithm = "RSA"
+  rsa_bits  = 2048
+}
+
 resource "tls_self_signed_cert" "webhook_cert" {
   private_key_pem = tls_private_key.webhook_key.private_key_pem
   
   subject {
-    common_name = "pod-identity-webhook.default.svc"
+    common_name = "pod-identity-webhook.${var.namespace}.svc"
   }
   
   dns_names = [
     "pod-identity-webhook"
-    "pod-identity-webhook.default"
-    "pod-identity-webhook.default.svc"
-    "pod-identity-webhook.default.svc.local"
-
+    "pod-identity-webhook.${var.namespace}"
+    "pod-identity-webhook.${var.namespace}.svc"
+    "pod-identity-webhook.${var.namespace}.svc.local"
   ]
   
   validity_period_hours = 8760

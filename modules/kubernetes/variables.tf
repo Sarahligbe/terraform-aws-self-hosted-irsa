@@ -40,3 +40,15 @@ variable "key_mount_path" {
   description = "Path to mount IRSA keys on the cluster"
   type        = string
 }
+
+variable "webhook_cert" {
+  description = "Self hosted cert for pod identity webhook" # get better
+  type        = string
+  sensitive   = true
+}
+
+variable "webhook_key" {
+  description = "Private key used to sign" # get better
+  type        = string
+  sensitive   = true
+}

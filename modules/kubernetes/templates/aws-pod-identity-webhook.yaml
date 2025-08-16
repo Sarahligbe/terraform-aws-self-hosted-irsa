@@ -85,7 +85,7 @@ metadata:
 type: kubernetes.io/tls
 data:
   tls.crt: ${base64encode(webhook_cert)}
-  tls.key: ${base64encode(private_key_pem)}
+  tls.key: ${base64encode(webhook_key)}
 ---
 apiVersion: apps/v1
 kind: Deployment
