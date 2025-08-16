@@ -13,6 +13,10 @@ terraform {
       source = "hashicorp/tls"
       version = "4.1.0"
     }
+    local = {
+      source = "hashicorp/local"
+      version = "2.5.3"
+    }
   }
 }
 
@@ -28,3 +32,5 @@ provider "kubectl" {
   token          = var.kubernetes_connection != null ? var.kubernetes_connection.token : null
   cluster_ca_certificate = var.kubernetes_connection != null && var.kubernetes_connection.cluster_ca_certificate != null ? base64decode(var.kubernetes_connection.cluster_ca_certificate) : null
 }
+
+provider "local" {}
