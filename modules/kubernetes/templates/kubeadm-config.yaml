@@ -1,0 +1,18 @@
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: ClusterConfiguration
+apiServer:
+  extraArgs:
+    - name: "service-account-key-file"
+      value: "${key_mount_path}/oidc-issuer.pub"
+    - name: "service-account-signing-key-file"
+      value: "${key_mount_path}/oidc-issuer.key"
+    - name: "api-audiences" 
+      value: "sts.amazonaws.com"
+    - name: "service-account-issuer"
+      value:  ${issuer_url}
+  extraVolumes:
+    - name: irsa-keys
+      hostPath: ${key_host_path}
+      mountPath: ${key_mount_path}
+      readOnly: true
+      pathType: DirectoryOrCreate

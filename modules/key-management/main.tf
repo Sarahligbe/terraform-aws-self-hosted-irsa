@@ -97,3 +97,27 @@ resource "aws_iam_openid_connect_provider" "main" {
   client_id_list  = ["sts.amazonaws.com"]
   thumbprint_list = [data.tls_certificate.s3.certificates[0].sha1_fingerprint]
 }
+
+resource "tls_self_signed_cert" "webhook_cert" {
+  private_key_pem = tls_private_key.webhook_key.private_key_pem
+  
+  subject {
+    common_name = "pod-identity-webhook.default.svc"
+  }
+  
+  dns_names = [
+    "pod-identity-webhook"
+    "pod-identity-webhook.default"
+    "pod-identity-webhook.default.svc"
+    "pod-identity-webhook.default.svc.local"
+
+  ]
+  
+  validity_period_hours = 8760
+  
+  allowed_uses = [
+    "key_encipherment",
+    "digital_signature",
+    "server_auth"
+  ]
+}

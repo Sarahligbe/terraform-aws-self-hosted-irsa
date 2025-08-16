@@ -66,6 +66,18 @@ variable "kubernetes_connection" {
   }
 }
 
+variable "irsa_keys_local_path" {
+  description = "Local path to store IRSA keys"
+  type        = string
+  default     = null
+}
+
+variable "pod_identity_namespace" {
+  description = "Namespace where aws pod identity webhook is installed"
+  type        = string
+  default     = "default"
+}
+
 variable "tags" {
   description = "Tags to apply to AWS resources"
   type        = map(string)

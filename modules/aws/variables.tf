@@ -1,3 +1,8 @@
+variable "region" {
+  description = "AWS region"
+  type        = string
+}
+
 variable "prefix" {
   description = "Prefix used for resource naming and tagging"
   type = string

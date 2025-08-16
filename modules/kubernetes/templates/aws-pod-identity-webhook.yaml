@@ -1,0 +1,167 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pod-identity-webhook
+  namespace: ${namespace}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: pod-identity-webhook
+  namespace: ${namespace}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - update
+  - patch
+  resourceNames:
+  - "pod-identity-webhook"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: pod-identity-webhook
+  namespace: ${namespace}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: pod-identity-webhook
+subjects:
+- kind: ServiceAccount
+  name: pod-identity-webhook
+  namespace: ${namespace}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pod-identity-webhook
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
+  verbs:
+  - get
+  - watch
+  - list
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: pod-identity-webhook
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pod-identity-webhook
+subjects:
+- kind: ServiceAccount
+  name: pod-identity-webhook
+  namespace: ${namespace}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: pod-identity-webhook-cert
+  namespace: ${namespace}
+type: kubernetes.io/tls
+data:
+  tls.crt: ${base64encode(webhook_cert)}
+  tls.key: ${base64encode(private_key_pem)}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pod-identity-webhook
+  namespace: ${namespace}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pod-identity-webhook
+  template:
+    metadata:
+      labels:
+        app: pod-identity-webhook
+    spec:
+      serviceAccountName: pod-identity-webhook
+      containers:
+      - name: pod-identity-webhook
+        image: amazon/amazon-eks-pod-identity-webhook:latest
+        imagePullPolicy: Always
+        command:
+        - /webhook
+        - --in-cluster=false
+        - --namespace=${namespace}
+        - --service-name=pod-identity-webhook
+        - --annotation-prefix=eks.amazonaws.com
+        - --token-audience=sts.amazonaws.com
+        - --logtostderr
+        volumeMounts:
+        - name: cert
+          mountPath: "/etc/webhook/certs"
+          readOnly: true
+      volumes:
+      - name: cert
+        secret:
+          secretName: pod-identity-webhook-cert
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: pod-identity-webhook
+webhooks:
+- name: pod-identity-webhook.amazonaws.com
+  failurePolicy: Ignore
+  clientConfig:
+    service:
+      name: pod-identity-webhook
+      namespace: ${namespace}
+      path: "/mutate"
+    caBundle: ${base64encode(webhook_cert)}
+  objectSelector:
+    matchExpressions:
+      - key: eks.amazonaws.com/skip-pod-identity-webhook
+        operator: "DoesNotExist"
+        values: []
+  rules:
+  - operations: [ "CREATE" ]
+    apiGroups: [""]
+    apiVersions: ["v1"]
+    resources: ["pods"]
+  sideEffects: None
+  admissionReviewVersions: ["v1beta1"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pod-identity-webhook
+  namespace: ${namespace}
+  annotations:
+    prometheus.io/port: "443"
+    prometheus.io/scheme: "https"
+    prometheus.io/scrape: "true"
+spec:
+  ports:
+  - port: 443
+    targetPort: 443
+  selector:
+    app: pod-identity-webhook

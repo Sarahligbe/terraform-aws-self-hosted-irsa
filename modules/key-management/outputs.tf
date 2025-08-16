@@ -42,3 +42,8 @@ output "discovery_bucket_name" {
   description = "S3 bucket name where the IRSA signing keys are stored"
   value = aws_s3_bucket.discovery_bucket.id
 }
+
+output "webhook_cert" {
+  description = "Self-managed webhook cert"
+  value = tls_self_signed_cert.webhook_cert.cert_pem
+}

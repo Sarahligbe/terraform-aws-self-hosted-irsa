@@ -1,9 +1,7 @@
 locals {
   distribution_config = {
     kubeadm = {
-      keys_path      = "/etc/kubernetes/irsa"
-      keys_secret_mount = "/etc/kubernetes/irsa"
-      restart_required = true
+      key_mount_path      = "/etc/kubernetes/irsa"
     }
     k3s = {
       keys_path      = "/var/lib/rancher/k3s/server/tls/service-account"
@@ -34,6 +32,10 @@ locals {
     Cluster      = var.cluster_name
     Distribution = var.kubernetes_distribution
   })
+
+  key_host_path = var.irsa_keys_local_path != null ? var.irsa_keys_local_path : 
+              "${pathexpand("~")}/.terraform-irsa/${var.cluster_name}"
+
 }
 
 module "key_management" {
@@ -52,4 +54,18 @@ module "aws" {
   discovery_bucket_name = module.key_management.discovery_bucket_name
   
   tags                  = local.common_tags
+}
+
+module "kubernetes" {
+  source    = "./modules/kubernetes"
+
+  region    = var.region
+  cluster_name = var.cluster_name
+  namespace   = var.pod_identity_namespace
+  distribution  = var.kubernetes_distribution
+  issuer_url    = module.key_management.service_account_issuer
+  private_key_pem   = module.key_management.private_key_pem
+  public_key_pem    = module.key_management.public_key_pem
+  key_host_path     = var.irsa_keys_local_path
+  key_mount_path    = local.current_dist_config.key_mount_path
 }
